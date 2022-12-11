@@ -25,19 +25,22 @@
 #include <linux/namei.h>
 #include <linux/fs.h>
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0)
 #define HAVE_PROC_OPS
 #endif
 
-#define PROCFS_NAME "mymodule"
+#define PROCFS_NAME "mykernelmodule"
 #define PROCFS_NAME_TASK "cputime"
 #define PROCFS_NAME_INODE "inode"
+#define USER_FILE_NAME "Desktop/myusermodule"
 
 static int len = 1;
 static struct proc_dir_entry *parent;
 
 pid_t p_id = 1;
-
 struct pid *pid_struct;
 struct task_struct *cputime;
 
@@ -45,9 +48,7 @@ struct inode *inode;
 struct path path;
 char *path_name = "/proc/meminfo";
 
-char etx_array[10]="null";
-char str2[10]="null";
-char str3[10]="null";
+FILE *USER;
 
 /***************** Procfs Functions *******************/
 
@@ -57,10 +58,8 @@ static void     __exit tct_ind_exit(void);
 static ssize_t  read_task_cputime(struct file *filp, char __user *buffer, size_t length, loff_t * offset);
 static ssize_t write_task_cputime(struct file *filp, const char *buff, size_t len, loff_t *off);
 
-
 static ssize_t  read_inode(struct file *filp, char __user *buffer, size_t length,loff_t * offset);
 static ssize_t write_inode(struct file *filp, const char *buff, size_t len, loff_t *off);
-
 
 /***************** fops Functions *******************/
 
@@ -153,9 +152,17 @@ static ssize_t  read_task_cputime(struct file *filp, char __user *buffer, size_t
 	sprintf(str, "task_cputime total time spent on the CPU: %lld\n", cputime->last_sum_exec_runtime / 1000000);
 	go_to_new_line();
 
+	/*
 	if(copy_to_user(buffer, arr, k)){
         	pr_err("Data Send : Err!\n");
-    	}
+    }
+	*/
+	
+	USER = fopen(USER_FILE_NAME, "r+");
+	
+	fprintf(USER, "%s", arr);
+	
+	fclose(USER);
 	
 	return length;
 }
@@ -164,6 +171,13 @@ static ssize_t write_task_cputime(struct file *filp, const char *buff, size_t le
 
 	//printf "PID" | sudo tee /proc/mymodule/cputime
 	
+	USER = fopen(USER_FILE_NAME, "r+");
+	
+	fscanf(USER, "%d", p_id);
+	
+	fclose(USER);
+	
+	/*
 	char *id;
 	id = (char *)kmalloc(1000*sizeof(char),GFP_KERNEL);
 
@@ -171,6 +185,7 @@ static ssize_t write_task_cputime(struct file *filp, const char *buff, size_t le
 		return -EFAULT;
 
 	p_id = simple_strtoul(id,NULL,0);
+	*/
 
 	printk(KERN_INFO "write_task_cputime called.\nNew PID: %d\n", p_id);
 	
@@ -223,9 +238,17 @@ static ssize_t  read_inode(struct file *filp, char __user *buffer, size_t length
 	sprintf(str, "Номер версии индекса: %d\n", inode->i_generation);
 	go_to_new_line();
 
+	/*
 	if(copy_to_user(buffer, arr, k)){
         	pr_err("Data Send : Err!\n");
-    	}
+    }
+	*/
+		
+	USER = fopen(USER_FILE_NAME, "r+");
+	
+	fprintf(USER, "%s", arr);
+	
+	fclose(USER);
 
 	return length;
 }
@@ -235,14 +258,22 @@ static ssize_t  read_inode(struct file *filp, char __user *buffer, size_t length
 static ssize_t write_inode(struct file *filp, const char *buff, size_t len, loff_t *off) {
 
 	//printf "PATH" | sudo tee /proc/mymodule/inode
+	
+	USER = fopen(USER_FILE_NAME, "r+");
+	
+	fscanf(USER, "%s", path_name);
+	
+	fclose(USER);
 
+	/*
 	char *new_path_name;
 	new_path_name = (char *)kmalloc(1000*sizeof(char), GFP_KERNEL);
 
 	if(copy_from_user(new_path_name,buff,len))
 		return -EFAULT;
-
+	
 	path_name = new_path_name;
+	*/
 	
 	printk(KERN_INFO "write_inode called.\n");
 
